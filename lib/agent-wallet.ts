@@ -72,9 +72,22 @@ export async function sendUSDC(toAddress: string, amount: number) {
     OKX_API_KEY: OKX_API_KEY, 
     OKX_SECRET_KEY: OKX_SECRET_KEY, 
     OKX_PASSPHRASE: OKX_PASSPHRASE,
+    
+    // THE SHIELD KEY: This forces the CLI to use an encrypted file instead of the system keyring
+    // This is the official OKX fix for the "failed to write keyring blob" error on Linux machines.
+    OKX_KEYRING_PASSWORD: 'shifter_secure_protocol_2026',
+    ONCHAINOS_KEYRING_PASSWORD: 'shifter_secure_protocol_2026',
+    
+    // Force the CLI to store its session tokens in our isolated /tmp directory as plain JSON files
+    OKX_SESSION_STORAGE: 'file',
+    OKX_SESSION_FILE: path.join(TEE_HOME, 'okx_session.json'),
+    ONCHAINOS_SESSION_STORAGE: 'file',
+    ONCHAINOS_SESSION_FILE: path.join(TEE_HOME, 'onchain_session.json'),
+
     OKX_USE_PLAIN_TEXT: 'true',
     ONCHAINOS_USE_PLAIN_TEXT: 'true',
-    DBUS_SESSION_BUS_ADDRESS: '', // Silence D-Bus if possible
+    
+    DBUS_SESSION_BUS_ADDRESS: '', // Silence D-Bus to prevent searching for system services
     XDG_RUNTIME_DIR: TEE_HOME,
     XDG_CACHE_HOME: TEE_HOME,
     XDG_CONFIG_HOME: TEE_HOME,
