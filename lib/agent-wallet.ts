@@ -40,22 +40,22 @@ export async function sendUSDC(toAddress: string, amount: number) {
   try {
     // 1. Ensure wallet is logged in (required for transient Railway environments)
     try {
-      await execPromise('onchainos wallet status')
+      await execPromise('npx onchainos wallet status')
     } catch (statusErr) {
       console.log('[sendUSDC] Wallet not logged in. Performing headless TEE authentication...')
+      // We use literal single quotes to prevent shell expansion of special characters like '$'
       const apiKey = process.env.OKX_API_KEY || '28c9786b-053b-48df-959f-0d6beacc1d0a'
       const secretKey = process.env.OKX_SECRET_KEY || '8AE96E275EE85DD891AF588E59F822AD'
       const pass = process.env.OKX_PASSPHRASE || '$Skippy2000'
       
-      // We use --force to overwrite any stale/broken session state
-      await execPromise(`onchainos wallet login --api-key ${apiKey} --secret-key ${secretKey} --passphrase "${pass}" --force`)
+      await execPromise(`npx onchainos wallet login --api-key '${apiKey}' --secret-key '${secretKey}' --passphrase '${pass}' --force`)
       console.log('[sendUSDC] Wallet authenticated successfully.')
     }
 
     // 2. Execute the smart contract call securely via TEE
     console.log(`[sendUSDC] Routing ${amount} USDC to ${toAddress} via OKX Onchain OS...`)
     const { stdout, stderr } = await execPromise(
-      `onchainos wallet contract-call --chain 196 --to ${USDC_ADDRESS} --input-data ${inputData} --force`
+      `npx onchainos wallet contract-call --chain 196 --to ${USDC_ADDRESS} --input-data ${inputData} --force`
     )
     
     console.log(`[sendUSDC] OKX OS Output:`, stdout)
