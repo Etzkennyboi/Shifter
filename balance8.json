@@ -1,0 +1,89 @@
+﻿{
+  "ok": true,
+  "data": {
+    "accountCount": 3,
+    "accountId": "56d70645-7dff-40cd-a9a2-b939e5884529",
+    "accountName": "Account 2",
+    "details": [
+      {
+        "tokenAssets": [
+          {
+            "absSpendingPendingBalance": "0",
+            "activeBuy": false,
+            "address": "0x1ef1034e7cd690b40a329bd64209ce563f95bb5c",
+            "balance": "0.016567823652176539",
+            "chainIndex": "196",
+            "decimal": "18",
+            "priceChangeRate24H": "-0.0161067648",
+            "rawBalance": "16567823652176539",
+            "receivedPendingBalance": "0",
+            "spendingPendingBalance": "0",
+            "symbol": "OKB",
+            "tokenAddress": "",
+            "tokenName": "X Layer",
+            "tokenPrice": "85.52",
+            "tokenType": "1",
+            "usdValue": "1.41688027"
+          },
+          {
+            "absSpendingPendingBalance": "0",
+            "activeBuy": false,
+            "address": "0x1ef1034e7cd690b40a329bd64209ce563f95bb5c",
+            "balance": "0.19",
+            "chainIndex": "196",
+            "decimal": "6",
+            "priceChangeRate24H": "-0.0002800952",
+            "rawBalance": "190000",
+            "receivedPendingBalance": "0",
+            "spendingPendingBalance": "0",
+            "symbol": "USDΓé«0",
+            "tokenAddress": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+            "tokenName": "USDΓé«0",
+            "tokenPrice": "0.99938",
+            "tokenType": "1",
+            "usdValue": "0.1898822"
+          },
+          {
+            "absSpendingPendingBalance": "0",
+            "activeBuy": false,
+            "address": "0x1ef1034e7cd690b40a329bd64209ce563f95bb5c",
+            "balance": "0.15",
+            "chainIndex": "196",
+            "decimal": "6",
+            "priceChangeRate24H": "-0.0000800120",
+            "rawBalance": "150000",
+            "receivedPendingBalance": "0",
+            "spendingPendingBalance": "0",
+            "symbol": "USDC",
+            "tokenAddress": "0x74b7f16337b8972027f6196a17a631ac6de26d22",
+            "tokenName": "USD Coin",
+            "tokenPrice": "0.99977",
+            "tokenType": "1",
+            "usdValue": "0.1499655"
+          },
+          {
+            "absSpendingPendingBalance": "0",
+            "activeBuy": false,
+            "address": "0x1ef1034e7cd690b40a329bd64209ce563f95bb5c",
+            "balance": "0.000017",
+            "chainIndex": "196",
+            "decimal": "6",
+            "priceChangeRate24H": "-0.0003201184",
+            "rawBalance": "17",
+            "receivedPendingBalance": "0",
+            "spendingPendingBalance": "0",
+            "symbol": "USDT",
+            "tokenAddress": "0x1e4a5963abfd975d8c9021ce480b42188849d41d",
+            "tokenName": "Tether USD",
+            "tokenPrice": "0.99931",
+            "tokenType": "1",
+            "usdValue": "0.00001698"
+          }
+        ]
+      }
+    ],
+    "evmAddress": "0x1ef1034e7cd690b40a329bd64209ce563f95bb5c",
+    "solAddress": "4C38xHR1GKw6fXacSQSQ2CUYuW2uzvno2kH2uSKLd16t",
+    "totalValueUsd": "1.76"
+  }
+}

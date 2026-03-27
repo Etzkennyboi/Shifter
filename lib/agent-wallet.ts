@@ -25,8 +25,6 @@ export async function sendUSDC(toAddress: string, amount: number) {
   // Check balance using public RPC (no private key needed)
   const balance = await usdc.balanceOf(AGENT_WALLET_ADDRESS)
   const balanceFormatted = parseFloat(ethers.formatUnits(balance, decimals))
-  
-  console.log(`[sendUSDC] Treasury check for ${AGENT_WALLET_ADDRESS}: ${balanceFormatted} USDC. Requested: ${amount} USDC`)
 
   if (balanceFormatted < amount) {
     throw new Error(`Insufficient treasury balance: ${balanceFormatted} USDC available, ${amount} requested. Please fund the OKX agent wallet.`)
@@ -37,19 +35,15 @@ export async function sendUSDC(toAddress: string, amount: number) {
   const iface = new ethers.Interface(USDC_ABI)
   const inputData = iface.encodeFunctionData('transfer', [toAddress, amountInUnits])
 
-  const binaryPath = require('path').join(process.cwd(), 'bin', 'onchainos')
-  const binary = require('fs').existsSync(binaryPath) ? binaryPath : 'onchainos'
-
   console.log(`[sendUSDC] Routing ${amount} USDC to ${toAddress} via OKX Onchain OS...`)
   
   try {
     // We execute the smart contract call securely utilizing the OS TEE environment, passing --force for headless execution.
     const { stdout, stderr } = await execPromise(
-      `${binary} wallet contract-call --chain 196 --to ${USDC_ADDRESS} --input-data ${inputData} --force`
+      `onchainos wallet contract-call --chain 196 --to ${USDC_ADDRESS} --input-data ${inputData} --force`
     )
     
     console.log(`[sendUSDC] OKX OS Output:`, stdout)
-    if (stderr) console.error(`[sendUSDC] OKX OS Stderr:`, stderr)
     
     let txHash = 'unknown'
     try {
@@ -69,9 +63,8 @@ export async function sendUSDC(toAddress: string, amount: number) {
       amount,
     }
   } catch (txErr: any) {
-    const errorMsg = txErr.stderr || txErr.message || 'Onchain OS wallet execution failed';
-    console.error(`[sendUSDC] OKX OS Error for ${toAddress}:`, errorMsg)
-    throw new Error(errorMsg)
+    console.error(`[sendUSDC] OKX OS Error for ${toAddress}:`, txErr.message || txErr)
+    throw new Error('Onchain OS wallet execution failed. Check server logs.')
   }
 }
 
