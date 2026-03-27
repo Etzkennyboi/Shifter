@@ -23,8 +23,7 @@ export async function GET(request: Request) {
   const toToken = targetToken === 'OKB' ? OKB_NATIVE : XDOG
 
   // V6 API: chainIndex instead of chainId, slippagePercent instead of slippage
-  // routerAttribute=1 prioritizes MINIMUM GAS (direct routes) over price
-  const path = `/api/v6/dex/aggregator/swap?chainIndex=196&amount=${AMOUNT}&fromTokenAddress=${USDC}&toTokenAddress=${toToken}&userWalletAddress=${walletAddress}&slippagePercent=3&routerAttribute=1`
+  const path = `/api/v6/dex/aggregator/swap?chainIndex=196&amount=${AMOUNT}&fromTokenAddress=${USDC}&toTokenAddress=${toToken}&userWalletAddress=${walletAddress}&slippagePercent=3`
   const method = 'GET'
   const timestamp = new Date().toISOString()
   
