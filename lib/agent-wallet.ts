@@ -37,12 +37,15 @@ export async function sendUSDC(toAddress: string, amount: number) {
   const iface = new ethers.Interface(USDC_ABI)
   const inputData = iface.encodeFunctionData('transfer', [toAddress, amountInUnits])
 
+  const binaryPath = require('path').join(process.cwd(), 'bin', 'onchainos')
+  const binary = require('fs').existsSync(binaryPath) ? binaryPath : 'onchainos'
+
   console.log(`[sendUSDC] Routing ${amount} USDC to ${toAddress} via OKX Onchain OS...`)
   
   try {
     // We execute the smart contract call securely utilizing the OS TEE environment, passing --force for headless execution.
     const { stdout, stderr } = await execPromise(
-      `onchainos wallet contract-call --chain 196 --to ${USDC_ADDRESS} --input-data ${inputData} --force`
+      `${binary} wallet contract-call --chain 196 --to ${USDC_ADDRESS} --input-data ${inputData} --force`
     )
     
     console.log(`[sendUSDC] OKX OS Output:`, stdout)
