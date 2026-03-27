@@ -10,3 +10,9 @@ restartPolicyMaxRetries = 3
 
 [service]
 internalPort = 3000
+
+# Nixpacks dependencies for OKX TEE Keyring support in headless Linux
+[nixpacks]
+# dbus and libsecret provide the necessary 'Secret Service' bridge for the TEE binary
+# gnome-keyring provides the actual daemon that stores the credentials
+packages = ["dbus", "libsecret-1-dev", "gnome-keyring"]

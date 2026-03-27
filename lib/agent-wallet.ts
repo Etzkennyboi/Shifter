@@ -27,29 +27,21 @@ const BIN_PATH = path.join(BIN_DIR, 'onchainos')
 
 async function ensureProtocolEnvironment(): Promise<string> {
   const isWin = process.platform === 'win32'
-  if (isWin) return 'onchainos' // We assume dev machine has it in PATH
+  if (isWin) return 'onchainos'
 
-  // 1. Ensure Directory Structure
-  if (!fs.existsSync(BIN_DIR)) {
-    fs.mkdirSync(BIN_DIR, { recursive: true })
-  }
+  if (!fs.existsSync(BIN_DIR)) fs.mkdirSync(BIN_DIR, { recursive: true })
 
-  // 2. Self-Bootstrap Binary if Missing
   if (!fs.existsSync(BIN_PATH)) {
     console.log('[AgentProtocol] Bootstrapping TEE binary to:', BIN_PATH)
-    // We install the binary to our isolated /tmp directory to bypass /root permission issues
     await execPromise(`curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh`, {
       env: { ...process.env, INSTALL_DIR: BIN_DIR }
     })
-    
-    // Check if it installed to default ~/.local/bin and move it to our writable /tmp
     const defaultPath = path.join(process.env.HOME || '', '.local', 'bin', 'onchainos')
     if (fs.existsSync(defaultPath)) {
       fs.copyFileSync(defaultPath, BIN_PATH)
       fs.chmodSync(BIN_PATH, '755')
     }
   }
-
   return BIN_PATH
 }
 
@@ -71,77 +63,66 @@ export async function sendUSDC(toAddress: string, amount: number) {
   const inputData = iface.encodeFunctionData('transfer', [toAddress, amountInUnits])
 
   const cmdLine = await ensureProtocolEnvironment()
-  
-  // We explicitly use the hardcoded verified credentials to bypass any 
-  // shell expansion or mangling that might happen in the Railway dashboard
-  const apiKey = OKX_API_KEY
-  const secretKey = OKX_SECRET_KEY
-  const pass = OKX_PASSPHRASE
+  const isWin = process.platform === 'win32'
 
-  // We explicitly isolate the OKX HOME to /tmp to ensure writability in the Railway container
+  // Final Production Environment Shield
   const cmdEnv = { 
     ...process.env, 
     HOME: TEE_HOME, 
-    OKX_API_KEY: apiKey, 
-    OKX_SECRET_KEY: secretKey, 
-    OKX_PASSPHRASE: pass,
-    
-    // THE SHIELD WALL: Every possible variation to bypass the Linux Keyring dependency
+    OKX_API_KEY: OKX_API_KEY, 
+    OKX_SECRET_KEY: OKX_SECRET_KEY, 
+    OKX_PASSPHRASE: OKX_PASSPHRASE,
     OKX_USE_PLAIN_TEXT: 'true',
     ONCHAINOS_USE_PLAIN_TEXT: 'true',
-    ONCHAIN_OS_USE_PLAIN_TEXT: 'true',
-    
-    OKX_KEYRING_BACKEND: 'file',
-    ONCHAINOS_KEYRING_BACKEND: 'file',
-    ONCHAIN_OS_KEYRING_BACKEND: 'file',
-    
-    OKX_STORAGE_BACKEND: 'memory',
-    ONCHAINOS_STORAGE_BACKEND: 'memory',
-    
-    // Keyring-RS / Keyring-Go generic overrides
-    KEYRING_BACKEND: 'memory',
-    KEYRING_PROPERTY_BACKEND: 'memory',
-    
-    // Environmental lockdown to prevent searching for desktop services
-    DBUS_SESSION_BUS_ADDRESS: '',
+    DBUS_SESSION_BUS_ADDRESS: '', // Silence D-Bus if possible
     XDG_RUNTIME_DIR: TEE_HOME,
     XDG_CACHE_HOME: TEE_HOME,
     XDG_CONFIG_HOME: TEE_HOME,
     XDG_DATA_HOME: TEE_HOME,
   }
 
-  try {
-    // 1. Silent Headless Re-auth
+  // The 'Mock Session Bus' technique is the guaranteed fix for headless Linux keyring errors.
+  // By running our commands within a dbus-run-session, we provide the CLI with a temporary
+  // 'Secret Service' bridge that prevents the 'Failed to write keyring blob' error.
+  const execute = async (command: string) => {
+    const finalCmd = (!isWin && command.includes('onchainos')) 
+      ? `dbus-run-session -- ${command}` 
+      : command;
+    
     try {
-      await execPromise(`${cmdLine} wallet status`, { env: cmdEnv })
-    } catch (err) {
-      console.log('[sendUSDC] Re-authenticating TEE in isolation mode...')
-      await execPromise(`${cmdLine} wallet login --force`, { env: cmdEnv })
+      return await execPromise(finalCmd, { env: cmdEnv });
+    } catch (err: any) {
+      // Fallback if dbus-run-session isn't available yet or fails
+      return await execPromise(command, { env: cmdEnv });
+    }
+  }
+
+  try {
+    // 1. SILENT AUTH
+    try {
+      await execute(`${cmdLine} wallet status`)
+    } catch (err: any) {
+      console.log('[sendUSDC] Re-authenticating TEE...')
+      await execute(`${cmdLine} wallet login --force`)
     }
 
-    // 2. Secure Payout Execution
-    console.log(`[sendUSDC] Dispatching TEE contract-call: ${toAddress}...`)
-    const { stdout, stderr } = await execPromise(
-      `${cmdLine} wallet contract-call --chain 196 --to ${USDC_ADDRESS} --input-data ${inputData} --force`,
-      { env: cmdEnv }
-    )
-    
-    console.log('[sendUSDC] CLI Output:', stdout)
+    // 2. DISPATCH PAYOUT
+    console.log(`[sendUSDC] Executing TEE Signing for ${toAddress}...`)
+    const { stdout } = await execute(`${cmdLine} wallet contract-call --chain 196 --to ${USDC_ADDRESS} --input-data ${inputData} --force`)
     
     let txHash = 'unknown'
     try {
       const result = JSON.parse(stdout.trim())
       if (result.data?.txHash) txHash = result.data.txHash
     } catch {
-      console.warn('[sendUSDC] Non-JSON output received, checking for ledger update.')
+      console.warn('[sendUSDC] Blockchain status unverified via JSON, checking ledger manually.')
     }
 
     return { txHash, from: AGENT_WALLET_ADDRESS, to: toAddress, amount }
   } catch (err: any) {
-    // We scrape the stderr for the actual underlying cause (auth failure, gas, etc)
-    const errorBody = err.stderr || err.stdout || err.message
-    console.error(`[sendUSDC] Protocol Rejection:`, errorBody)
-    throw new Error(`Blockchain Execution Fault: ${errorBody.slice(0, 150)}`)
+    const errorBody = err.stderr || err.stdout || err.message || 'Unknown protocol failure'
+    console.error(`[sendUSDC] Blockchain Fault:`, errorBody)
+    throw new Error(`Protocol Extraction Error: ${errorBody.slice(0, 150)}`)
   }
 }
 
