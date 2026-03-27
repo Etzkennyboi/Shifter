@@ -1,18 +1,12 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npx prisma generate && npx prisma db push && npm run build"
+buildCommand = "npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "npx prisma db push && node scripts/seed-tasks.js && npm start"
 healthcheckPath = "/"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
 [service]
 internalPort = 3000
-
-# Nixpacks dependencies for OKX TEE Keyring support in headless Linux
-[nixpacks]
-# dbus and libsecret provide the necessary 'Secret Service' bridge for the TEE binary
-# gnome-keyring provides the actual daemon that stores the credentials
-packages = ["dbus", "libsecret-1-dev", "gnome-keyring"]
