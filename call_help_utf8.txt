@@ -1,0 +1,34 @@
+﻿Call a smart contract (EVM inputData or SOL unsigned tx)
+
+Usage: onchainos.exe wallet contract-call [OPTIONS] --to <TO> --chain <CHAIN>
+
+Options:
+      --base-url <BASE_URL>
+          Backend service URL (overrides config)
+      --to <TO>
+          Contract address to interact with
+      --chain <CHAIN>
+          Chain ID (e.g. "1" for Ethereum, "501" for Solana, "56" for BSC)
+      --value <VALUE>
+          Native token amount to send with the call (default "0") [default: 0]
+      --input-data <INPUT_DATA>
+          EVM call data (hex-encoded, e.g. "0xa9059cbb...")
+      --unsigned-tx <UNSIGNED_TX>
+          Solana unsigned transaction data (base58)
+      --gas-limit <GAS_LIMIT>
+          Gas limit override (EVM only)
+      --from <FROM>
+          Sender address (optional ΓÇö defaults to selectedAccountId)
+      --aa-dex-token-addr <AA_DEX_TOKEN_ADDR>
+          AA DEX token contract address (optional)
+      --aa-dex-token-amount <AA_DEX_TOKEN_AMOUNT>
+          AA DEX token amount (optional)
+      --mev-protection
+          Enable MEV protection (supported on Ethereum, BSC, Base, Solana)
+      --jito-unsigned-tx <JITO_UNSIGNED_TX>
+          Jito unsigned transaction data for Solana MEV protection (required when --mev-protection is used on Solana)
+      --force
+          Force execution: skip confirmation prompts from the backend
+  -h, --help
+          Print help
+
