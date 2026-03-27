@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.env
+.env.local
+*.log
+prisma/dev.db
+prisma/dev.db-journal
+.agents/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!postcss.config.js
+!next-env.d.ts
+!skills-lock.json

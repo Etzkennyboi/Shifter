@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id              String       @id @default(cuid())
+  walletAddress   String        @unique
+  bestScore       Int          @default(0)
+  totalEarned     Float        @default(0)
+  totalWithdrawn  Float        @default(0)
+  pendingBalance  Float        @default(0)
+  gamesPlayed     Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  withdrawals     Withdrawal[]
+  completions     TaskCompletion[]
+
+  @@index([walletAddress])
+}
+
+model Withdrawal {
+  id            String   @id @default(cuid())
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id])
+  walletAddress String
+  amount        Float
+  score         Int
+  txHash        String
+  status        String   @default("confirmed")
+  createdAt     DateTime @default(now())
+
+  @@index([walletAddress])
+  @@index([createdAt])
+}
+
+model Task {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  reward        Float
+  type          String   // e.g., "HOLD_X_LAYER_USDC"
+  targetValue   Float?   // e.g., 1.0
+  completions   TaskCompletion[]
+  createdAt     DateTime @default(now())
+}
+
+model TaskCompletion {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  playerId  String
+  player    Player   @relation(fields: [playerId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([taskId, playerId])
+}
+
+model GameSession {
+  id            String   @id @default(cuid())
+  walletAddress String?
+  score         Int
+  coinsCollected Int     @default(0)
+  earnings      Float    @default(0)
+  createdAt     DateTime @default(now())
+}
