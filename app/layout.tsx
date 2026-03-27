@@ -26,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${orbitron.variable} ${rajdhani.variable} bg-[#030014] text-[#E0E7FF] font-sans min-h-screen selection:bg-[#00F0FF] selection:text-black`}>
+      <body suppressHydrationWarning className={`${orbitron.variable} ${rajdhani.variable} bg-[#030014] text-[#E0E7FF] font-sans min-h-screen selection:bg-[#00F0FF] selection:text-black`}>
         {children}
         <div className="crt-overlay" />
       </body>

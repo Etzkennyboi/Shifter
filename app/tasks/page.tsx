@@ -19,6 +19,7 @@ export default function TasksPage() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null)
   const [hasFollowed, setHasFollowed] = useState(false)
+  const [totalEarned, setTotalEarned] = useState(0)
 
   const fetchTasks = useCallback(async (addr?: string) => {
     try {
@@ -36,6 +37,13 @@ export default function TasksPage() {
     const addr = localStorage.getItem('shifter_wallet')
     setWalletAddress(addr)
     fetchTasks(addr || undefined)
+    
+    if (addr) {
+      fetch(`/api/player?walletAddress=${addr}`)
+        .then(res => res.json())
+        .then(data => setTotalEarned(data.totalEarned || 0))
+        .catch(console.error)
+    }
   }, [fetchTasks])
 
   const handleVerify = async (taskId: string) => {
@@ -161,9 +169,14 @@ export default function TasksPage() {
           <Link href="/" className="clip-edge text-neon-blue border border-neon-blue/50 px-4 py-2 text-[10px] font-bold hover:bg-neon-blue/20 transition-all uppercase tracking-[0.2em]">
              « TERMINAL
           </Link>
-          <h1 className="text-xl font-display font-black tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-blue text-right drop-shadow-[0_0_15px_rgba(176,38,255,0.6)]">
-            BOUNTIES
-          </h1>
+          <div className="text-right">
+            <h1 className="text-xl font-display font-black tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-blue drop-shadow-[0_0_15px_rgba(176,38,255,0.6)]">
+              BOUNTIES
+            </h1>
+            <p className="text-[10px] font-bold text-neon-green tracking-widest uppercase">
+              Yield: ${totalEarned.toFixed(2)}
+            </p>
+          </div>
         </div>
 
         <div className="mb-6">

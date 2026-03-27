@@ -148,7 +148,7 @@ export default function Profile() {
         <div className="grid grid-cols-2 gap-4">
           <StatBox label="Best Score" value={player?.bestScore || 0} />
           <StatBox label="Sessions" value={player?.gamesPlayed || 0} />
-          <StatBox label="Acquired" value={`$${(player?.totalEarned || 0).toFixed(2)}`} />
+          <StatBox label="Bounty Yield" value={`$${(player?.totalEarned || 0).toFixed(2)}`} />
           <StatBox label="Extracted" value={`$${(player?.totalWithdrawn || 0).toFixed(2)}`} />
         </div>
       </div>

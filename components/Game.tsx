@@ -80,7 +80,12 @@ export default function Game() {
   const [isWithdrawing, setIsWithdrawing] = useState(false)
   const [withdrawTxHash, setWithdrawTxHash] = useState<string | null>(null)
   const [withdrawError, setWithdrawError] = useState<string | null>(null)
+  const [hasHydrated, setHydrated] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
 
   const uiScoreRef = useRef<HTMLSpanElement>(null)
   const uiEarningsRef = useRef<HTMLSpanElement>(null)
@@ -691,6 +696,8 @@ export default function Game() {
   }, [walletAddress, totalPendingEarnings, displayScore])
 
   // ===== RENDER =====
+  if (!hasHydrated) return null
+
   return (
     <div
       ref={gameAreaRef}
@@ -725,14 +732,19 @@ export default function Game() {
           <p className="text-neon-blue text-[10px] mb-1 uppercase tracking-widest font-bold text-center">» Dodge · Collect · Earn</p>
           <p className="text-white/40 text-[8px] mb-8 uppercase tracking-[0.3em] text-center">System: Real USDC · X Layer</p>
 
-          <div className="flex flex-col gap-2 mb-8 items-center bg-black/40 px-6 py-2 border-l-2 border-neon-pink">
-            {highScore > 0 ? (
-              <p className="text-gray-400 text-xs uppercase tracking-widest">
-                Best Score <span className="text-neon-pink font-bold ml-2">{highScore}</span>
+          <div className="grid grid-cols-2 gap-4 mb-8 w-full max-w-[260px] pointer-events-none">
+            <div className="flex flex-col items-center bg-black/40 px-3 py-2 border-l-2 border-neon-pink">
+              <p className="text-gray-500 text-[8px] uppercase tracking-widest leading-none mb-1">Max Score</p>
+              <p className="text-neon-pink font-display font-bold text-lg leading-none">
+                {highScore}
               </p>
-            ) : (
-              <p className="text-gray-500 text-[10px] uppercase tracking-widest">Awaiting Initial Run</p>
-            )}
+            </div>
+            <div className="flex flex-col items-center bg-black/40 px-3 py-2 border-r-2 border-neon-green">
+              <p className="text-gray-500 text-[8px] uppercase tracking-widest leading-none mb-1">Bounty Yield</p>
+              <p className="text-neon-green font-display font-bold text-lg leading-none">
+                ${taskEarnings.toFixed(2)}
+              </p>
+            </div>
           </div>
 
           <button
