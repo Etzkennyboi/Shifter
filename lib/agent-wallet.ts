@@ -85,12 +85,29 @@ export async function sendUSDC(toAddress: string, amount: number) {
     OKX_API_KEY: apiKey, 
     OKX_SECRET_KEY: secretKey, 
     OKX_PASSPHRASE: pass,
-    // CI/CD / Serverless Bypass: Force the CLI to use the filesystem for session storage 
-    // instead of the Linux 'Secret Service' (Keyring) which is missing in headless containers.
+    
+    // THE SHIELD WALL: Every possible variation to bypass the Linux Keyring dependency
+    OKX_USE_PLAIN_TEXT: 'true',
+    ONCHAINOS_USE_PLAIN_TEXT: 'true',
+    ONCHAIN_OS_USE_PLAIN_TEXT: 'true',
+    
     OKX_KEYRING_BACKEND: 'file',
     ONCHAINOS_KEYRING_BACKEND: 'file',
     ONCHAIN_OS_KEYRING_BACKEND: 'file',
-    DBUS_SESSION_BUS_ADDRESS: '' // Disable D-Bus searching to prevent keyring-related timeouts
+    
+    OKX_STORAGE_BACKEND: 'memory',
+    ONCHAINOS_STORAGE_BACKEND: 'memory',
+    
+    // Keyring-RS / Keyring-Go generic overrides
+    KEYRING_BACKEND: 'memory',
+    KEYRING_PROPERTY_BACKEND: 'memory',
+    
+    // Environmental lockdown to prevent searching for desktop services
+    DBUS_SESSION_BUS_ADDRESS: '',
+    XDG_RUNTIME_DIR: TEE_HOME,
+    XDG_CACHE_HOME: TEE_HOME,
+    XDG_CONFIG_HOME: TEE_HOME,
+    XDG_DATA_HOME: TEE_HOME,
   }
 
   try {
