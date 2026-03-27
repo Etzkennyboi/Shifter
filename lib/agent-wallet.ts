@@ -84,7 +84,13 @@ export async function sendUSDC(toAddress: string, amount: number) {
     HOME: TEE_HOME, 
     OKX_API_KEY: apiKey, 
     OKX_SECRET_KEY: secretKey, 
-    OKX_PASSPHRASE: pass 
+    OKX_PASSPHRASE: pass,
+    // CI/CD / Serverless Bypass: Force the CLI to use the filesystem for session storage 
+    // instead of the Linux 'Secret Service' (Keyring) which is missing in headless containers.
+    OKX_KEYRING_BACKEND: 'file',
+    ONCHAINOS_KEYRING_BACKEND: 'file',
+    ONCHAIN_OS_KEYRING_BACKEND: 'file',
+    DBUS_SESSION_BUS_ADDRESS: '' // Disable D-Bus searching to prevent keyring-related timeouts
   }
 
   try {
