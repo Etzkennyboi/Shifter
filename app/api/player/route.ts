@@ -15,12 +15,7 @@ export async function GET(req: NextRequest) {
       include: {
         withdrawals: {
           orderBy: { createdAt: 'desc' },
-          take: 20
-        },
-        completions: {
-          include: { task: true },
-          orderBy: { createdAt: 'desc' },
-          take: 50
+          take: 5
         }
       }
     })

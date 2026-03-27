@@ -84,6 +84,20 @@ export default function Game() {
 
   const uiScoreRef = useRef<HTMLSpanElement>(null)
   const uiEarningsRef = useRef<HTMLSpanElement>(null)
+  const [taskEarnings, setTaskEarnings] = useState(0)
+
+  // Fetch task earnings whenever wallet is connected or game ends
+  const fetchTaskEarnings = useCallback(async (address: string) => {
+    try {
+      const res = await fetch(`/api/player?walletAddress=${address}`)
+      const data = await res.json()
+      // taskEarnings = pendingBalance or totalEarned from tasks
+      // For this arcade, we will show "Acquired" as their total bounty yield
+      setTaskEarnings(data.totalEarned || 0)
+    } catch (e) {
+      console.error('Failed to fetch task earnings:', e)
+    }
+  }, [])
 
   // ===== GAME REFS (mutable, no re-renders) =====
   const g = useRef<GameRefs>({
@@ -420,14 +434,17 @@ export default function Game() {
           setDisplaySessionEarnings(state.sessionEarnings)
           setGameState('gameover')
 
+          const address = localStorage.getItem('shifter_wallet')
           fetch('/api/player', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              walletAddress: localStorage.getItem('shifter_wallet'),
+              walletAddress: address,
               score: state.score,
               earnings: state.sessionEarnings,
             }),
+          }).then(() => {
+            if (address) fetchTaskEarnings(address)
           }).catch(() => {})
 
           return
@@ -599,6 +616,8 @@ export default function Game() {
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
       const address = accounts[0]
+      
+      await fetchTaskEarnings(address)
 
       try {
         await window.ethereum.request({
@@ -779,8 +798,8 @@ export default function Game() {
             <span ref={uiScoreRef} className="text-2xl font-display text-white">0</span>
           </div>
           <div className="flex flex-col items-end bg-black/40 px-4 py-1 border-r-2 border-neon-green">
-            <span className="text-[10px] text-neon-green uppercase tracking-widest font-bold">Earnings</span>
-            <span ref={uiEarningsRef} className="text-xl font-display text-white">$0.00</span>
+            <span className="text-[10px] text-neon-green uppercase tracking-widest font-bold">Total Bounties</span>
+            <span className="text-xl font-display text-white">${taskEarnings.toFixed(2)}</span>
           </div>
         </div>
       )}
@@ -799,8 +818,8 @@ export default function Game() {
             </div>
             <div className="bg-black/40 p-4 border border-neon-green/30 clip-edge-rev relative overflow-hidden group">
               <div className="absolute inset-0 bg-neon-green/5 group-hover:bg-neon-green/10 transition-colors"></div>
-              <p className="text-[10px] text-neon-green uppercase tracking-widest mb-1">Acquired</p>
-              <p className="text-3xl font-display font-bold text-white relative z-10">${displaySessionEarnings.toFixed(2)}</p>
+              <p className="text-[10px] text-neon-green uppercase tracking-widest mb-1">Total Yield</p>
+              <p className="text-3xl font-display font-bold text-white relative z-10">${taskEarnings.toFixed(2)}</p>
             </div>
           </div>
 

@@ -13,15 +13,6 @@ interface Withdrawal {
   status: string
 }
 
-interface TaskCompletion {
-  id: string
-  createdAt: string
-  task: {
-    title: string
-    reward: number
-  }
-}
-
 interface Player {
   walletAddress: string
   bestScore: number
@@ -30,7 +21,6 @@ interface Player {
   pendingBalance: number
   gamesPlayed: number
   withdrawals: Withdrawal[]
-  completions: TaskCompletion[]
   dbError?: boolean
 }
 
@@ -95,11 +85,7 @@ export default function Profile() {
       }
 
       setTxHash(data.txHash)
-      setPlayer(prev => prev ? { 
-        ...prev, 
-        pendingBalance: prev.pendingBalance - amount, 
-        totalWithdrawn: prev.totalWithdrawn + amount 
-      } : null)
+      setPlayer(prev => prev ? { ...prev, pendingBalance: prev.pendingBalance - amount, totalWithdrawn: prev.totalWithdrawn + amount } : null)
       localStorage.setItem('shifter_pending', ( (player?.pendingBalance || 0) - amount ).toFixed(6))
     } catch (err: any) {
       setError(err.message)
@@ -112,26 +98,6 @@ export default function Profile() {
     localStorage.removeItem('shifter_wallet')
     window.location.href = '/'
   }
-
-  // Combine completions and withdrawals into a single chronological log
-  const neuralLog = [
-    ...(player?.completions || []).map(c => ({
-      id: c.id,
-      type: 'ACQUISITION' as const,
-      label: c.task.title,
-      amount: c.task.reward,
-      date: c.createdAt,
-      link: null
-    })),
-    ...(player?.withdrawals || []).map(w => ({
-      id: w.id,
-      type: 'EXTRACTION' as const,
-      label: 'USDC EXTRACTION',
-      amount: -w.amount,
-      date: w.createdAt,
-      link: `${XLAYER_EXPLORER}/tx/${w.txHash}`
-    }))
-  ].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   if (loading) {
     return (
@@ -181,9 +147,9 @@ export default function Profile() {
 
         <div className="grid grid-cols-2 gap-4">
           <StatBox label="Best Score" value={player?.bestScore || 0} />
-          <StatBox label="Tasks Complete" value={player?.completions?.length || 0} />
-          <StatBox label="Total Earned" value={`$${(player?.totalEarned || 0).toFixed(2)}`} />
-          <StatBox label="Total Extracted" value={`$${(player?.totalWithdrawn || 0).toFixed(2)}`} />
+          <StatBox label="Sessions" value={player?.gamesPlayed || 0} />
+          <StatBox label="Acquired" value={`$${(player?.totalEarned || 0).toFixed(2)}`} />
+          <StatBox label="Extracted" value={`$${(player?.totalWithdrawn || 0).toFixed(2)}`} />
         </div>
       </div>
 
@@ -201,10 +167,10 @@ export default function Profile() {
         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
           <span className="text-8xl">💎</span>
         </div>
-        <p className="text-[10px] text-yellow-500 uppercase tracking-[0.2em] mb-2 font-bold">Extraction Vault (Pending)</p>
+        <p className="text-[10px] text-yellow-500 uppercase tracking-[0.2em] mb-2 font-bold">Pending Withdrawal</p>
         <div className="flex items-baseline gap-2 mb-8 flex-wrap">
-          <p className="text-4xl font-display font-black text-white break-all">${currentPendingBalance.toFixed(3)}</p>
-          <p className="text-xs text-yellow-500 font-bold tracking-widest">USDC</p>
+          <p className="text-4xl sm:text-5xl font-display font-black text-white break-all">${currentPendingBalance.toFixed(3)}</p>
+          <p className="text-xs sm:text-sm text-yellow-500 font-bold tracking-widest">USDC</p>
         </div>
 
         <div className="flex flex-col gap-4 relative z-10">
@@ -238,9 +204,15 @@ export default function Profile() {
                   : 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.4)]'
               }`}
             >
-              {isWithdrawing ? 'EXTRACTING...' : player?.dbError ? 'OFFLINE' : 'EXECUTE EXTRACT'}
+              {isWithdrawing ? 'PROCESSING...' : player?.dbError ? 'ERR_SYS_OFFLINE' : 'EXTRACT'}
             </button>
           </div>
+          
+          <p className="text-[10px] text-yellow-500/50 uppercase tracking-widest font-bold">
+            {currentPendingBalance < MIN_WITHDRAWAL 
+              ? `Req: $${MIN_WITHDRAWAL} USDC min` 
+              : `System ready. Min extract: $${MIN_WITHDRAWAL} USDC`}
+          </p>
         </div>
 
         {txHash && (
@@ -259,41 +231,30 @@ export default function Profile() {
 
       <h2 className="text-lg font-display font-black mb-6 flex items-center gap-3 text-white/60 tracking-[0.2em] uppercase">
         <span className="w-2 h-2 bg-neon-purple shadow-[0_0_5px_#B026FF]"></span>
-        Neural Log (Activity)
+        Extraction Log
       </h2>
 
       <div className="space-y-3">
-        {neuralLog.length > 0 ? (
-          neuralLog.map((item) => (
-            <div key={item.id} className="bg-black/40 border border-white/5 clip-edge p-5 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-white/5 transition-colors gap-4">
-              <div className="flex items-center gap-4">
-                <div className={`w-2 h-2 rounded-full ${item.type === 'ACQUISITION' ? 'bg-neon-blue shadow-[0_0_8px_#00F0FF]' : 'bg-neon-pink shadow-[0_0_8px_#FF00A8]'}`} />
-                <div>
-                  <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">{item.type}</p>
-                  <p className="text-xs font-display font-bold text-white uppercase tracking-widest italic">{item.label}</p>
-                  <p className="text-[10px] text-white/20 uppercase tracking-[0.2em] mt-1">{new Date(item.date).toLocaleString()}</p>
-                </div>
+        {player?.withdrawals && player.withdrawals.length > 0 ? (
+          player.withdrawals.map((tx) => (
+            <div key={tx.id} className="bg-black/40 border border-white/5 clip-edge p-5 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-white/5 transition-colors gap-4">
+              <div>
+                <p className="text-lg font-display font-bold text-neon-green mb-1">+${tx.amount.toFixed(2)} USDC</p>
+                <p className="text-[10px] text-white/40 uppercase tracking-widest">{new Date(tx.createdAt).toLocaleString()}</p>
               </div>
-              <div className="flex items-center justify-between sm:justify-end gap-6">
-                <p className={`text-lg font-display font-bold ${item.amount > 0 ? 'text-neon-blue' : 'text-neon-pink'}`}>
-                  {item.amount > 0 ? '+' : '-'}${Math.abs(item.amount).toFixed(2)}
-                </p>
-                {item.link && (
-                  <a 
-                    href={item.link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[10px] bg-white/5 border border-white/10 px-4 py-2 clip-edge text-white/60 hover:text-white hover:border-white/30 font-bold uppercase tracking-widest transition-all text-center"
-                  >
-                    LEDGER ↗
-                  </a>
-                )}
-              </div>
+              <a 
+                href={`${XLAYER_EXPLORER}/tx/${tx.txHash}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[10px] bg-neon-blue/10 border border-neon-blue/30 px-4 py-2 clip-edge text-neon-blue hover:bg-neon-blue hover:text-black font-bold uppercase tracking-widest transition-all text-center"
+              >
+                LEDGER
+              </a>
             </div>
           ))
         ) : (
           <div className="text-center py-12 bg-black/20 border border-dashed border-white/10 clip-both">
-            <p className="text-white/30 uppercase tracking-[0.2em] text-xs font-bold">Neural log empty. Initiate activities first.</p>
+            <p className="text-white/30 uppercase tracking-[0.2em] text-xs font-bold">Log is empty. No extractions found.</p>
           </div>
         )}
       </div>
@@ -306,7 +267,7 @@ function StatBox({ label, value }: { label: string; value: string | number }) {
     <div className="bg-black/40 p-4 border border-white/10 relative group overflow-hidden">
       <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue/30 group-hover:bg-neon-blue transition-colors"></div>
       <p className="text-[10px] text-neon-blue uppercase mb-1 font-bold tracking-widest pl-2">{label}</p>
-      <p className="text-xl font-display font-bold text-white pl-2">{value}</p>
+      <p className="text-2xl font-display font-bold text-white pl-2">{value}</p>
     </div>
   )
 }
