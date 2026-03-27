@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { XLAYER_EXPLORER, MIN_WITHDRAWAL } from '@/lib/constants'
+import { ethers } from 'ethers'
 
 interface Withdrawal {
   id: string
@@ -72,6 +73,19 @@ export default function Profile() {
     setError(null)
 
     try {
+      // 1. Signature Step
+      const amountNum = parseFloat(withdrawAmount)
+      const sigMessage = `Withdraw ${amountNum.toFixed(6)} USDC to ${walletAddress}`
+      
+      if (!window.ethereum) {
+        throw new Error('EVM Provider missing. Unlock your wallet first.')
+      }
+      
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+      const signature = await signer.signMessage(sigMessage)
+
+      // 2. Request Payout
       const res = await fetch('/api/withdraw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,6 +93,7 @@ export default function Profile() {
           walletAddress,
           amount,
           score: player.bestScore,
+          signature
         }),
       })
 

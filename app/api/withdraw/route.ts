@@ -2,20 +2,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendUSDC } from '@/lib/agent-wallet'
 import { MIN_WITHDRAWAL, MAX_WITHDRAWAL } from '@/lib/constants'
+import { ethers } from 'ethers'
 
 export async function POST(req: NextRequest) {
   let walletAddress: string = ''
   let amount: number = 0
   let score: number = 0
+  let signature: string = ''
   
   try {
     const body = await req.json()
     walletAddress = body.walletAddress
     amount = body.amount
     score = body.score
+    signature = body.signature
 
-    if (!walletAddress || !amount) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!walletAddress || !amount || !signature) {
+      return NextResponse.json({ error: 'Missing required fields or signature' }, { status: 400 })
+    }
+
+    // SECURITY: Authenticate the user via signature
+    try {
+      const message = `Withdraw ${amount.toFixed(6)} USDC to ${walletAddress}`
+      const recoveredAddress = ethers.verifyMessage(message, signature)
+      
+      if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+        throw new Error('Invalid signature identity')
+      }
+    } catch (sigErr: any) {
+      console.error('Signature verification failed:', sigErr.message)
+      return NextResponse.json({ error: 'Identity verification failed. Please sign the transaction in your wallet.' }, { status: 401 })
     }
 
     if (amount < MIN_WITHDRAWAL || amount > MAX_WITHDRAWAL) {

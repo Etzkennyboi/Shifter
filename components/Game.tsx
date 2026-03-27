@@ -11,6 +11,7 @@ import {
   COINS_PER_SCREEN, COIN_SPAWN_INTERVAL, MIN_WITHDRAWAL,
   XLAYER_CHAIN_ID, XLAYER_EXPLORER,
 } from '@/lib/constants'
+import { ethers } from 'ethers'
 
 // ===== TYPES =====
 interface Obstacle {
@@ -307,7 +308,7 @@ export default function Game() {
   }, [playerScreenY])
 
   // ===== GAME LOOP =====
-  const gameLoop = useCallback(() => {
+  const gameLoop = useCallback(async () => { // Made async to await signature
     if (!g.current.isRunning) return
 
     const state = g.current
@@ -439,18 +440,34 @@ export default function Game() {
           setDisplaySessionEarnings(state.sessionEarnings)
           setGameState('gameover')
 
-          const address = localStorage.getItem('shifter_wallet')
-          fetch('/api/player', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              walletAddress: address,
-              score: state.score,
-              earnings: state.sessionEarnings,
-            }),
-          }).then(() => {
-            if (address) fetchTaskEarnings(address)
-          }).catch(() => {})
+          // SIGNATURE_PHASE: Authenticate before saving score
+          let signature = null
+          try {
+            if (!window.ethereum) throw new Error("No wallet")
+            const provider = new ethers.BrowserProvider(window.ethereum)
+            const signer = await provider.getSigner()
+            const message = `Submit Score: ${Math.floor(state.score)} for Shifter Arcade`
+            signature = await signer.signMessage(message)
+          } catch (e) {
+            console.warn("User cancelled signature or wallet absent. Score not recorded for rewards.")
+          }
+
+          // UPDATE DB with signature
+          if (walletAddress && signature) {
+            fetch('/api/player', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                walletAddress,
+                score: Math.floor(state.score),
+                earnings: state.sessionEarnings,
+                signature
+              }),
+            }).then(r => r.json()).then(data => {
+              if (data.bestScore) setHighScore(data.bestScore)
+              fetchTaskEarnings(walletAddress)
+            }).catch(err => console.error('Failed to sync player info:', err))
+          }
 
           return
         }
