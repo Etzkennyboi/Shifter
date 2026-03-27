@@ -34,11 +34,18 @@ export async function GET(req: NextRequest) {
         totalWithdrawn: 0,
         pendingBalance: 0,
         gamesPlayed: 0,
+        totalTaskEarnings: 0,
         withdrawals: []
       })
     }
 
-    return NextResponse.json(player)
+    // Calculate total earnings specifically from tasks
+    const totalTaskEarnings = player.completions.reduce((sum, c) => sum + (c.task?.reward || 0), 0)
+
+    return NextResponse.json({
+      ...player,
+      totalTaskEarnings
+    })
   } catch (error: any) {
     console.warn('Database connection failed, using local fallback:', error.message)
     // Return a fallback state so the UI doesn't crash
@@ -49,6 +56,7 @@ export async function GET(req: NextRequest) {
       totalWithdrawn: 0,
       pendingBalance: 0,
       gamesPlayed: 0,
+      totalTaskEarnings: 0,
       withdrawals: [],
       dbError: true
     })

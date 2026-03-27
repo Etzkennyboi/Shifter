@@ -29,6 +29,7 @@ interface Player {
   totalWithdrawn: number
   pendingBalance: number
   gamesPlayed: number
+  totalTaskEarnings: number
   withdrawals: Withdrawal[]
   completions: TaskCompletion[]
   dbError?: boolean
@@ -47,17 +48,7 @@ export default function Profile() {
   const pendingFromStorage = typeof window !== 'undefined' ? parseFloat(localStorage.getItem('shifter_pending') || '0') : 0
   const currentPendingBalance = pendingFromDB !== undefined ? pendingFromDB : pendingFromStorage
 
-  useEffect(() => {
-    const wallet = localStorage.getItem('shifter_wallet')
-    if (wallet) {
-      setWalletAddress(wallet)
-      fetchPlayer(wallet)
-    } else {
-      setLoading(false)
-    }
-  }, [])
-
-  const fetchPlayer = async (address: string) => {
+  const fetchPlayer = useCallback(async (address: string) => {
     try {
       const res = await fetch(`/api/player?walletAddress=${address}`)
       if (res.ok) {
@@ -69,11 +60,21 @@ export default function Profile() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const wallet = localStorage.getItem('shifter_wallet')
+    if (wallet) {
+      setWalletAddress(wallet)
+      fetchPlayer(wallet)
+    } else {
+      setLoading(false)
+    }
+  }, [fetchPlayer])
 
   const handleWithdraw = useCallback(async () => {
     const amount = parseFloat(withdrawAmount)
-    if (!walletAddress || !player || amount < MIN_WITHDRAWAL || amount > player.pendingBalance) return
+    if (!walletAddress || !player || amount < MIN_WITHDRAWAL || amount > currentPendingBalance) return
     setIsWithdrawing(true)
     setError(null)
 
@@ -100,13 +101,13 @@ export default function Profile() {
         pendingBalance: prev.pendingBalance - amount, 
         totalWithdrawn: prev.totalWithdrawn + amount 
       } : null)
-      localStorage.setItem('shifter_pending', ( (player?.pendingBalance || 0) - amount ).toFixed(6))
+      localStorage.setItem('shifter_pending', ( currentPendingBalance - amount ).toFixed(6))
     } catch (err: any) {
       setError(err.message)
     } finally {
       setIsWithdrawing(false)
     }
-  }, [walletAddress, player, withdrawAmount])
+  }, [walletAddress, player, withdrawAmount, currentPendingBalance])
 
   const disconnectWallet = () => {
     localStorage.removeItem('shifter_wallet')
@@ -181,9 +182,9 @@ export default function Profile() {
 
         <div className="grid grid-cols-2 gap-4">
           <StatBox label="Best Score" value={player?.bestScore || 0} />
-          <StatBox label="Tasks Complete" value={player?.completions?.length || 0} />
-          <StatBox label="Total Earned" value={`$${(player?.totalEarned || 0).toFixed(2)}`} />
-          <StatBox label="Total Extracted" value={`$${(player?.totalWithdrawn || 0).toFixed(2)}`} />
+          <StatBox label="Bounty" value={`$${(player?.totalTaskEarnings || 0).toFixed(2)}`} />
+          <StatBox label="Acquired" value={`$${(player?.totalEarned || 0).toFixed(2)}`} />
+          <StatBox label="Extracted" value={`$${(player?.totalWithdrawn || 0).toFixed(2)}`} />
         </div>
       </div>
 
