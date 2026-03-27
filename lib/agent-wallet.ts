@@ -15,6 +15,11 @@ const USDC_ABI = [
 const USDC_ADDRESS = process.env.USDC_CONTRACT_ADDRESS || '0x74b7f16337b8972027f6196a17a631ac6de26d22'
 export const AGENT_WALLET_ADDRESS = process.env.AGENT_WALLET_ADDRESS || '0x1ef1034e7cd690b40a329bd64209ce563f95bb5c'
 
+// Hardcoded Credentials (Matches verified swap-params config)
+const OKX_API_KEY = '28c9786b-053b-48df-959f-0d6beacc1d0a'
+const OKX_SECRET_KEY = '8AE96E275EE85DD891AF588E59F822AD'
+const OKX_PASSPHRASE = '$Skippy2000'
+
 // Persistent Writable Path for TEE Tools and Config (Essential for Stateless Railway/Cloud)
 const TEE_HOME = '/tmp/okx_engine'
 const BIN_DIR = path.join(TEE_HOME, 'bin')
@@ -34,7 +39,7 @@ async function ensureProtocolEnvironment(): Promise<string> {
     console.log('[AgentProtocol] Bootstrapping TEE binary to:', BIN_PATH)
     // We install the binary to our isolated /tmp directory to bypass /root permission issues
     await execPromise(`curl -sSL https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh | sh`, {
-      env: { ...process.env, INSTALL_DIR: BIN_DIR } // some installers support this, but we'll manually move if needed
+      env: { ...process.env, INSTALL_DIR: BIN_DIR }
     })
     
     // Check if it installed to default ~/.local/bin and move it to our writable /tmp
@@ -66,9 +71,9 @@ export async function sendUSDC(toAddress: string, amount: number) {
   const inputData = iface.encodeFunctionData('transfer', [toAddress, amountInUnits])
 
   const cmdLine = await ensureProtocolEnvironment()
-  const apiKey = process.env.OKX_API_KEY || '28c9786b-053b-48df-959f-0d6beacc1d0a'
-  const secretKey = process.env.OKX_SECRET_KEY || '8AE96E275EE85DD891AF588E59F822AD'
-  const pass = process.env.OKX_PASSPHRASE || '$Skippy2000'
+  const apiKey = process.env.OKX_API_KEY || OKX_API_KEY
+  const secretKey = process.env.OKX_SECRET_KEY || OKX_SECRET_KEY
+  const pass = process.env.OKX_PASSPHRASE || OKX_PASSPHRASE
 
   // We explicitly isolate the OKX HOME to /tmp to ensure writability in the Railway container
   const cmdEnv = { 
