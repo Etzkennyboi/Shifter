@@ -15,7 +15,12 @@ export async function GET(req: NextRequest) {
       include: {
         withdrawals: {
           orderBy: { createdAt: 'desc' },
-          take: 5
+          take: 10
+        },
+        completions: {
+          include: { task: true },
+          orderBy: { createdAt: 'desc' },
+          take: 10
         }
       }
     })
@@ -59,12 +64,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Anonymous session recorded' })
     }
 
+    const existingPlayer = await prisma.player.findUnique({ where: { walletAddress } })
+    const newBestScore = Math.max(existingPlayer?.bestScore || 0, score)
+
     const player = await prisma.player.upsert({
       where: { walletAddress },
       update: {
-        bestScore: {
-          set: await prisma.player.findUnique({ where: { walletAddress } }).then((p: any) => Math.max(p?.bestScore || 0, score))
-        },
+        bestScore: newBestScore,
         pendingBalance: { increment: earnings },
         totalEarned: { increment: earnings },
         gamesPlayed: { increment: 1 }
@@ -78,7 +84,11 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    return NextResponse.json(player)
+    return NextResponse.json({
+       success: true,
+       totalEarned: player.totalEarned,
+       bestScore: player.bestScore
+    })
   } catch (error) {
     console.error('Error updating player:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

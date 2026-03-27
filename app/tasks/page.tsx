@@ -173,9 +173,6 @@ export default function TasksPage() {
             <h1 className="text-xl font-display font-black tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-blue drop-shadow-[0_0_15px_rgba(176,38,255,0.6)]">
               BOUNTIES
             </h1>
-            <p className="text-[10px] font-bold text-neon-green tracking-widest uppercase">
-              Yield: ${totalEarned.toFixed(2)}
-            </p>
           </div>
         </div>
 

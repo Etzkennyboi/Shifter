@@ -21,6 +21,10 @@ interface Player {
   pendingBalance: number
   gamesPlayed: number
   withdrawals: Withdrawal[]
+  completions?: {
+    createdAt: string
+    task: { title: string, reward: number }
+  }[]
   dbError?: boolean
 }
 
@@ -147,9 +151,9 @@ export default function Profile() {
 
         <div className="grid grid-cols-2 gap-4">
           <StatBox label="Best Score" value={player?.bestScore || 0} />
-          <StatBox label="Sessions" value={player?.gamesPlayed || 0} />
-          <StatBox label="Bounty Yield" value={`$${(player?.totalEarned || 0).toFixed(2)}`} />
-          <StatBox label="Extracted" value={`$${(player?.totalWithdrawn || 0).toFixed(2)}`} />
+          <StatBox label="Tasks Done" value={player?.completions?.length || 0} />
+          <StatBox label="Total Earned" value={`$${(player?.totalEarned || 0).toFixed(2)}`} />
+          <StatBox label="Total Withdrawn" value={`$${(player?.totalWithdrawn || 0).toFixed(2)}`} />
         </div>
       </div>
 
@@ -158,7 +162,7 @@ export default function Profile() {
           <span className="text-xl animate-pulse text-neon-pink">⚠️</span>
           <div>
             <p className="font-bold tracking-widest">DB_LINK_FAILURE</p>
-            <p className="opacity-70 text-[10px] uppercase">Local cache active. Data extraction limited.</p>
+            <p className="opacity-70 text-[10px] uppercase">Local cache active. Withdrawal limited.</p>
           </div>
         </div>
       )}
@@ -204,14 +208,14 @@ export default function Profile() {
                   : 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.4)]'
               }`}
             >
-              {isWithdrawing ? 'PROCESSING...' : player?.dbError ? 'ERR_SYS_OFFLINE' : 'EXTRACT'}
+              {isWithdrawing ? 'PROCESSING...' : player?.dbError ? 'ERR_SYS_OFFLINE' : 'WITHDRAW'}
             </button>
           </div>
           
           <p className="text-[10px] text-yellow-500/50 uppercase tracking-widest font-bold">
             {currentPendingBalance < MIN_WITHDRAWAL 
               ? `Req: $${MIN_WITHDRAWAL} USDC min` 
-              : `System ready. Min extract: $${MIN_WITHDRAWAL} USDC`}
+              : `System ready. Min withdrawal: $${MIN_WITHDRAWAL} USDC`}
           </p>
         </div>
 
@@ -231,32 +235,60 @@ export default function Profile() {
 
       <h2 className="text-lg font-display font-black mb-6 flex items-center gap-3 text-white/60 tracking-[0.2em] uppercase">
         <span className="w-2 h-2 bg-neon-purple shadow-[0_0_5px_#B026FF]"></span>
-        Extraction Log
+        Activity Log
       </h2>
 
       <div className="space-y-3">
-        {player?.withdrawals && player.withdrawals.length > 0 ? (
-          player.withdrawals.map((tx) => (
-            <div key={tx.id} className="bg-black/40 border border-white/5 clip-edge p-5 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-white/5 transition-colors gap-4">
-              <div>
-                <p className="text-lg font-display font-bold text-neon-green mb-1">+${tx.amount.toFixed(2)} USDC</p>
-                <p className="text-[10px] text-white/40 uppercase tracking-widest">{new Date(tx.createdAt).toLocaleString()}</p>
+        {(() => {
+          const activities = [
+            ...(player?.withdrawals || []).map(w => ({ ...w, type: 'WITHDRAW' })),
+            ...(player?.completions || []).map(c => ({ 
+              id: c.createdAt, 
+              amount: c.task.reward, 
+              title: c.task.title, 
+              createdAt: c.createdAt, 
+              type: 'EARN' 
+            }))
+          ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+          if (activities.length === 0) {
+             return (
+              <div className="text-center py-12 bg-black/20 border border-dashed border-white/10 clip-both">
+                <p className="text-white/30 uppercase tracking-[0.2em] text-xs font-bold">Log is empty. No activity found.</p>
               </div>
-              <a 
-                href={`${XLAYER_EXPLORER}/tx/${tx.txHash}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-[10px] bg-neon-blue/10 border border-neon-blue/30 px-4 py-2 clip-edge text-neon-blue hover:bg-neon-blue hover:text-black font-bold uppercase tracking-widest transition-all text-center"
-              >
-                LEDGER
-              </a>
+            )
+          }
+
+          return activities.map((act: any) => (
+            <div key={act.id + act.type} className="bg-black/40 border border-white/5 clip-edge p-5 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-white/5 transition-colors gap-4">
+              <div>
+                <p className={`text-lg font-display font-bold mb-1 ${act.type === 'EARN' ? 'text-neon-blue' : 'text-neon-green'}`}>
+                  {act.type === 'EARN' ? `+${act.amount.toFixed(2)}` : `-${act.amount.toFixed(2)}`} USDC
+                </p>
+                <div className="flex items-center gap-3">
+                   <p className="text-[10px] text-white/40 uppercase tracking-widest">{new Date(act.createdAt).toLocaleString()}</p>
+                   <span className={`text-[8px] font-bold px-2 py-0.5 rounded ${act.type === 'EARN' ? 'bg-neon-blue/10 text-neon-blue' : 'bg-neon-green/10 text-neon-green'}`}>
+                     {act.type}
+                   </span>
+                </div>
+                {act.type === 'EARN' && (
+                  <p className="text-[10px] text-white/60 mt-1 italic tracking-widest">{act.title}</p>
+                )}
+              </div>
+              
+              {act.txHash && (
+                <a 
+                  href={`${XLAYER_EXPLORER}/tx/${act.txHash}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[10px] bg-white/5 border border-white/10 px-4 py-2 clip-edge text-white/70 hover:bg-white/10 hover:text-white font-bold uppercase tracking-widest transition-all text-center"
+                >
+                  LEDGER
+                </a>
+              )}
             </div>
           ))
-        ) : (
-          <div className="text-center py-12 bg-black/20 border border-dashed border-white/10 clip-both">
-            <p className="text-white/30 uppercase tracking-[0.2em] text-xs font-bold">Log is empty. No extractions found.</p>
-          </div>
-        )}
+        })()}
       </div>
     </div>
   )

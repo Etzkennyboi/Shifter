@@ -732,19 +732,14 @@ export default function Game() {
           <p className="text-neon-blue text-[10px] mb-1 uppercase tracking-widest font-bold text-center">» Dodge · Collect · Earn</p>
           <p className="text-white/40 text-[8px] mb-8 uppercase tracking-[0.3em] text-center">System: Real USDC · X Layer</p>
 
-          <div className="grid grid-cols-2 gap-4 mb-8 w-full max-w-[260px] pointer-events-none">
-            <div className="flex flex-col items-center bg-black/40 px-3 py-2 border-l-2 border-neon-pink">
-              <p className="text-gray-500 text-[8px] uppercase tracking-widest leading-none mb-1">Max Score</p>
-              <p className="text-neon-pink font-display font-bold text-lg leading-none">
-                {highScore}
+          <div className="flex flex-col gap-2 mb-8 items-center bg-black/40 px-6 py-2 border-l-2 border-neon-pink">
+            {highScore > 0 ? (
+              <p className="text-gray-400 text-xs uppercase tracking-widest">
+                Best Score <span className="text-neon-pink font-bold ml-2">{highScore}</span>
               </p>
-            </div>
-            <div className="flex flex-col items-center bg-black/40 px-3 py-2 border-r-2 border-neon-green">
-              <p className="text-gray-500 text-[8px] uppercase tracking-widest leading-none mb-1">Bounty Yield</p>
-              <p className="text-neon-green font-display font-bold text-lg leading-none">
-                ${taskEarnings.toFixed(2)}
-              </p>
-            </div>
+            ) : (
+              <p className="text-gray-500 text-[10px] uppercase tracking-widest">Awaiting Initial Run</p>
+            )}
           </div>
 
           <button
@@ -809,10 +804,6 @@ export default function Game() {
             <span className="text-[10px] text-neon-blue uppercase tracking-widest font-bold">Score</span>
             <span ref={uiScoreRef} className="text-2xl font-display text-white">0</span>
           </div>
-          <div className="flex flex-col items-end bg-black/40 px-4 py-1 border-r-2 border-neon-green">
-            <span className="text-[10px] text-neon-green uppercase tracking-widest font-bold">Total Bounties</span>
-            <span className="text-xl font-display text-white">${taskEarnings.toFixed(2)}</span>
-          </div>
         </div>
       )}
 
@@ -822,16 +813,11 @@ export default function Game() {
           <h2 className="text-4xl font-display font-black mb-1 animate-flicker text-neon-pink tracking-[0.1em] drop-shadow-[0_0_15px_rgba(255,0,60,0.8)]">SYSTEM</h2>
           <h3 className="text-xl font-display font-black mb-8 text-white tracking-[0.3em]">OVERLOAD</h3>
           
-          <div className="grid grid-cols-2 gap-4 w-full max-w-xs mb-10">
-            <div className="bg-black/40 p-4 border border-neon-blue/30 clip-edge relative overflow-hidden group">
+          <div className="grid grid-cols-1 gap-4 w-full max-w-xs mb-10">
+            <div className="bg-black/40 p-4 border border-neon-blue/30 clip-edge relative overflow-hidden group text-center">
               <div className="absolute inset-0 bg-neon-blue/5 group-hover:bg-neon-blue/10 transition-colors"></div>
               <p className="text-[10px] text-neon-blue uppercase tracking-widest mb-1">Final Score</p>
               <p className="text-3xl font-display font-bold text-white relative z-10">{displayScore}</p>
-            </div>
-            <div className="bg-black/40 p-4 border border-neon-green/30 clip-edge-rev relative overflow-hidden group">
-              <div className="absolute inset-0 bg-neon-green/5 group-hover:bg-neon-green/10 transition-colors"></div>
-              <p className="text-[10px] text-neon-green uppercase tracking-widest mb-1">Total Yield</p>
-              <p className="text-3xl font-display font-bold text-white relative z-10">${taskEarnings.toFixed(2)}</p>
             </div>
           </div>
 
