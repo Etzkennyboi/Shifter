@@ -9,7 +9,7 @@
     "db:push": "npx prisma db push",
     "db:generate": "npx prisma generate",
     "generate-wallet": "npx tsx scripts/generate-wallet.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "DATABASE_URL=\"file:./dev.db\" npx prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.15.0",
