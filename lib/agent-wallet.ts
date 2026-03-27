@@ -71,9 +71,12 @@ export async function sendUSDC(toAddress: string, amount: number) {
   const inputData = iface.encodeFunctionData('transfer', [toAddress, amountInUnits])
 
   const cmdLine = await ensureProtocolEnvironment()
-  const apiKey = process.env.OKX_API_KEY || OKX_API_KEY
-  const secretKey = process.env.OKX_SECRET_KEY || OKX_SECRET_KEY
-  const pass = process.env.OKX_PASSPHRASE || OKX_PASSPHRASE
+  
+  // We explicitly use the hardcoded verified credentials to bypass any 
+  // shell expansion or mangling that might happen in the Railway dashboard
+  const apiKey = OKX_API_KEY
+  const secretKey = OKX_SECRET_KEY
+  const pass = OKX_PASSPHRASE
 
   // We explicitly isolate the OKX HOME to /tmp to ensure writability in the Railway container
   const cmdEnv = { 

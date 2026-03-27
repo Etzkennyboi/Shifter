@@ -27,9 +27,9 @@ export async function GET(request: Request) {
   const method = 'GET'
   const timestamp = new Date().toISOString()
   
-  const apiKey = process.env.OKX_API_KEY || OKX_API_KEY
-  const secretKey = process.env.OKX_SECRET_KEY || OKX_SECRET_KEY
-  const passphrase = process.env.OKX_PASSPHRASE || OKX_PASSPHRASE
+  const apiKey = OKX_API_KEY
+  const secretKey = OKX_SECRET_KEY
+  const passphrase = OKX_PASSPHRASE
 
   const signStr = `${timestamp}${method}${path}`
   const signature = crypto.createHmac('sha256', secretKey).update(signStr).digest('base64')
